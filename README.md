@@ -4,7 +4,7 @@
 
 **L1NX** turns any area of interest into a full operational picture — in seconds. Drop a location, get live terrain analysis, weather intelligence, infrastructure mapping, satellite windows, population data, and automated threat indexing, all fused onto a single interactive map. Built for speed, designed for the field.
 
-🟢 **Live at [l1nx.mikohur.me](https://l1nx.mikohur.me)** — fully wired-up backend, no setup required.
+**Live at [l1nx.mikohur.me](https://l1nx.mikohur.me)**
 
 <img width="1000" alt="L1NX screenshot" src="https://github.com/user-attachments/assets/e4359f46-1e82-43e0-809e-190acf8967cb" />
 
