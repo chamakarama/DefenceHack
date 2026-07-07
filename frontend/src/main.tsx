@@ -6,6 +6,7 @@ import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import App from './App';
+import { ProfileProvider } from './profile';
 import { installDemoFetch } from './demo/demoMode';
 import './index.css';
 
@@ -30,7 +31,9 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <App />
+      <ProfileProvider>
+        <App />
+      </ProfileProvider>
     </QueryClientProvider>
   </React.StrictMode>,
 );

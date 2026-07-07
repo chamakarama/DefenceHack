@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getAstronomical } from '../../api/client';
 import { useBboxStore, useTimelineStore } from '../../store';
+import { useProfile } from '../../profile';
 import type { AstronomicalDayProps } from '../../api/types';
 
 const nightRatingDot = (r?: string) => {
@@ -31,6 +32,7 @@ const dateLabel = (iso: string) => {
 };
 
 export default function AstronomyCard() {
+  const profile = useProfile();
   const bbox = useBboxStore((s) => s.bbox);
   const committedMs = useTimelineStore((s) => s.committedMs);
   const t = useMemo(() => new Date(committedMs).toISOString(), [committedMs]);
@@ -44,16 +46,16 @@ export default function AstronomyCard() {
 
   if (!bbox) return null;
   if (isLoading) {
-    return <Skeleton title="Astronomy" hint="Loading…" />;
+    return <Skeleton title={profile.briefing.astronomyShort} hint="Loading…" />;
   }
   if (error || !data || !data.features.length) {
-    return <Skeleton title="Astronomy" hint="Unavailable." />;
+    return <Skeleton title={profile.briefing.astronomyShort} hint="Unavailable." />;
   }
 
   return (
     <section className="rounded-lg border border-white/10 bg-black/40 p-3">
       <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/90">
-        Astronomy · sun / moon / twilight
+        {profile.briefing.astronomy}
       </h3>
 
       <ul className="space-y-1.5">

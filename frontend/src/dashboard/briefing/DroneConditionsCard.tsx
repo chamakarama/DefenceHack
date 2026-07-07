@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getDroneConditions } from '../../api/client';
 import { useBboxStore, useTimelineStore } from '../../store';
+import { useProfile } from '../../profile';
 import type { DroneForecastStep, DroneRating } from '../../api/types';
 
 const ratingColor = (r?: DroneRating) => {
@@ -24,6 +25,7 @@ const shortHour = (iso: string) => {
 };
 
 export default function DroneConditionsCard() {
+  const profile = useProfile();
   const bbox = useBboxStore((s) => s.bbox);
   const committedMs = useTimelineStore((s) => s.committedMs);
   const t = useMemo(() => new Date(committedMs).toISOString(), [committedMs]);
@@ -37,10 +39,10 @@ export default function DroneConditionsCard() {
 
   if (!bbox) return null;
   if (isLoading) {
-    return <Skeleton title="UAS / Drone Conditions" hint="Loading…" />;
+    return <Skeleton title={profile.briefing.drone} hint="Loading…" />;
   }
   if (error || !data) {
-    return <Skeleton title="UAS / Drone Conditions" hint="Unavailable." />;
+    return <Skeleton title={profile.briefing.drone} hint="Unavailable." />;
   }
 
   const next: DroneForecastStep[] = (data.forecast_timeline ?? []).slice(0, 24);
@@ -50,7 +52,7 @@ export default function DroneConditionsCard() {
     <section className="rounded-lg border border-white/10 bg-black/40 p-3">
       <header className="mb-2 flex items-center justify-between">
         <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/90">
-          UAS / Drone Conditions
+          {profile.briefing.drone}
         </h3>
         <span
           className={`rounded-lg px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] ${ratingColor(data.summary.current_rating)}`}

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getLayer } from '../../api/client';
 import { useBboxStore, useTimelineStore } from '../../store';
+import { useProfile } from '../../profile';
 
 interface FmiMeasurement {
   parameter: string;
@@ -22,6 +23,7 @@ const fmtNum = (n: number | null | undefined, digits = 1, suffix = '') => {
 };
 
 export default function WeatherCard() {
+  const profile = useProfile();
   const bbox = useBboxStore((s) => s.bbox);
   const committedMs = useTimelineStore((s) => s.committedMs);
   const t = useMemo(() => new Date(committedMs).toISOString(), [committedMs]);
@@ -34,13 +36,13 @@ export default function WeatherCard() {
   });
 
   if (!bbox) return null;
-  if (isLoading) return <Skeleton title="Weather (FMI)" hint="Loading…" />;
-  if (error || !data) return <Skeleton title="Weather (FMI)" hint="Unavailable." />;
+  if (isLoading) return <Skeleton title={profile.briefing.weatherShort} hint="Loading…" />;
+  if (error || !data) return <Skeleton title={profile.briefing.weatherShort} hint="Unavailable." />;
 
   if (data.meta?.status !== 'ok' || !data.features.length) {
     return (
       <Skeleton
-        title="Weather (FMI)"
+        title={profile.briefing.weatherShort}
         hint={data.meta?.reason ? String(data.meta.reason) : 'No observations in window.'}
       />
     );
@@ -53,7 +55,7 @@ export default function WeatherCard() {
     <section className="rounded border border-white/10 bg-black/40 p-3">
       <header className="mb-2 flex items-baseline justify-between">
         <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/90">
-          Weather · FMI observations
+          {profile.briefing.weather}
         </h3>
         <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-white/45">
           {agg.stationCount} stn

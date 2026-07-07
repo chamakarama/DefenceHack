@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getLayer } from '../../api/client';
 import { useBboxStore, useTimelineStore } from '../../store';
+import { useProfile } from '../../profile';
 
 interface StarlinkProps {
   source: 'starlink';
@@ -19,6 +20,7 @@ const elevColor = (deg: number) =>
   deg > 45 ? '#d946ef' : deg > 20 ? '#a855f7' : '#7c3aed';
 
 export default function SatellitesCard() {
+  const profile = useProfile();
   const bbox = useBboxStore((s) => s.bbox);
   const committedMs = useTimelineStore((s) => s.committedMs);
   const t = useMemo(() => new Date(committedMs).toISOString(), [committedMs]);
@@ -57,7 +59,7 @@ export default function SatellitesCard() {
     <section className="rounded-lg border border-white/10 bg-black/40 p-3">
       <header className="mb-2 flex items-baseline justify-between">
         <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/90">
-          Starlink overhead
+          {profile.briefing.satellites}
         </h3>
         <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-white/45">
           {sats.length} sat · celestrak
@@ -112,10 +114,11 @@ export default function SatellitesCard() {
 }
 
 function Skeleton({ hint }: { hint: string }) {
+  const profile = useProfile();
   return (
     <section className="rounded-lg border border-white/10 bg-black/30 px-3 py-2">
       <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">
-        Starlink overhead
+        {profile.briefing.satellites}
       </h3>
       <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.06em] text-white/45">{hint}</p>
     </section>

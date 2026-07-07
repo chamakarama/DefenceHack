@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getTerrainEffects } from '../../api/client';
 import { useBboxStore, useTimelineStore } from '../../store';
+import { useProfile } from '../../profile';
 import type { TerrainFunctionRating } from '../../api/types';
 
 const ratingClass = (r?: string) => {
@@ -16,6 +17,7 @@ const ratingLabel = (r?: string) => (r ? r.replace(/_/g, ' ') : 'unknown');
 const FUNCTION_ORDER = ['maneuver', 'fires', 'intelligence', 'sustainment', 'protection'];
 
 export default function TerrainEffectsCard() {
+  const profile = useProfile();
   const bbox = useBboxStore((s) => s.bbox);
   const committedMs = useTimelineStore((s) => s.committedMs);
   const t = useMemo(() => new Date(committedMs).toISOString(), [committedMs]);
@@ -27,15 +29,16 @@ export default function TerrainEffectsCard() {
     staleTime: 60_000,
   });
 
-  if (!bbox) return <EmptyCard title="Terrain Effects" hint="Pan the map to load." />;
-  if (isLoading) return <EmptyCard title="Terrain Effects" hint="Loading…" />;
-  if (error || !data) return <EmptyCard title="Terrain Effects" hint="Unavailable." />;
+  const short = profile.briefing.terrainEffectsShort;
+  if (!bbox) return <EmptyCard title={short} hint="Pan the map to load." />;
+  if (isLoading) return <EmptyCard title={short} hint="Loading…" />;
+  if (error || !data) return <EmptyCard title={short} hint="Unavailable." />;
 
   return (
     <section className="rounded-lg border border-white/10 bg-black/40 p-3">
       <header className="mb-2 flex items-baseline justify-between">
         <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/90">
-          Terrain Effects Matrix
+          {profile.briefing.terrainEffects}
         </h3>
         <span className="font-mono text-[9px] uppercase tracking-[0.08em] text-white/45">
           {data.doctrine}
