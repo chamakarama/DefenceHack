@@ -1,12 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useToastStore } from '../store';
 import { DebugTriggerButton } from './DebugPanel';
+import HistoryPanel from './HistoryPanel';
+import { exportSituationReport } from '../lib/exportReport';
 
 type TopTab = 'plan' | 'history';
 
 export default function TopBar() {
   const [tab, setTab] = useState<TopTab>('plan');
   const push = useToastStore((s) => s.push);
+
+  const handleExport = () => {
+    const res = exportSituationReport();
+    if (!res.ok) push('error', res.reason ?? 'Export failed');
+    else push('success', 'Situation report opened — use your browser to save as PDF');
+  };
 
   return (
     <nav
@@ -42,65 +50,19 @@ export default function TopBar() {
 
       {/* Utilities */}
       <div className="flex items-center gap-4">
-        {/* Network debug trigger — opens the request log overlay */}
-        <DebugTriggerButton />
+        {/* Network debug trigger — dev-only request log */}
+        {import.meta.env.DEV && <DebugTriggerButton />}
 
         {/* Primary action */}
         <button
-          onClick={() => push('info', 'PDF export not implemented yet')}
+          onClick={handleExport}
           className="rounded-sm bg-white px-4 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-black transition-all hover:invert"
+          title="Open a print-ready operational summary (save as PDF from your browser)"
         >
           EXPORT PDF
         </button>
       </div>
-      {tab === 'history' && <HistoryComingSoon onClose={() => setTab('plan')} />}
+      {tab === 'history' && <HistoryPanel onClose={() => setTab('plan')} />}
     </nav>
-  );
-}
-
-function HistoryComingSoon({ onClose }: { onClose: () => void }) {
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed inset-0 z-[2000] flex items-center justify-center"
-      style={{ background: 'rgba(0,0,0,0.65)' }}
-      onClick={onClose}
-    >
-      <div
-        className="rounded-xl border p-8 max-w-lg mx-4"
-        style={{ background: '#131313', borderColor: '#393939' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="font-mono text-lg font-bold tracking-[0.2em] text-white mb-4">
-          PAST OPERATIONS
-        </h2>
-        <div className="space-y-3 text-sm text-white/70 leading-relaxed">
-          <p>
-            this is where you will browse archived missions, after-action reports,
-            and prior plans once the operation has concluded.
-          </p>
-          <p>
-            historical overlays, route playbacks, and decision logs will be
-            recoverable here for review and debrief.
-          </p>
-          <p className="text-white/50">coming soon.</p>
-        </div>
-        <div className="mt-6 flex justify-end">
-          <button
-            onClick={onClose}
-            className="rounded-sm bg-white px-4 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-black transition-all hover:invert"
-          >
-            BACK TO PLAN
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }

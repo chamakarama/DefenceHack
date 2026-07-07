@@ -42,6 +42,8 @@ export default function ZoneControls() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [createName, setCreateName] = useState('');
 
   const runPrefetch = async (zone: Zone) => {
     setBusyId(zone.id);
@@ -68,24 +70,37 @@ export default function ZoneControls() {
     }
   };
 
-  const handleSaveCurrent = () => {
+  const startCreate = () => {
     if (!map) {
       push('error', 'Map not ready');
       return;
     }
+    setCreateName(`Zone ${zones.length + 1}`);
+    setCreating(true);
+  };
+
+  const cancelCreate = () => {
+    setCreating(false);
+    setCreateName('');
+  };
+
+  const confirmCreate = () => {
+    if (!map) {
+      push('error', 'Map not ready');
+      return;
+    }
+    const name = createName.trim();
+    if (!name) return;
     const b = map.getBounds();
     const bbox: Bbox4 = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
     const center = map.getCenter();
-    const defaultName = `Zone ${zones.length + 1}`;
-    const name = window.prompt('Name this operation zone:', defaultName)?.trim();
-    if (!name) return;
-
     const zone = addZone({
       name,
       bbox,
       center: [center.lat, center.lng],
       zoom: map.getZoom(),
     });
+    cancelCreate();
     push('success', `Created zone "${name}" — prefetching all sources…`);
     void runPrefetch(zone);
   };
@@ -127,16 +142,55 @@ export default function ZoneControls() {
   };
 
   return (
-    <div className="pointer-events-auto absolute bottom-[88px] left-3 z-[1000] flex flex-col items-start gap-2">
-      <button
-        type="button"
-        onClick={handleSaveCurrent}
-        className="flex items-center gap-1.5 rounded-xl border border-white/20 bg-black/95 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-white shadow-[0_8px_24px_rgba(0,0,0,0.45)] hover:bg-black"
-        title="Save the current viewport as an operation zone and prefetch all sources"
-      >
-        <Plus className="h-3.5 w-3.5" />
-        Save zone
-      </button>
+    <div className="pointer-events-auto absolute bottom-[112px] left-3 z-[1000] flex flex-col items-start gap-2">
+      {creating ? (
+        <div className="flex w-72 flex-col gap-1.5 rounded-xl border border-white/20 bg-black/95 p-2 shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
+          <span className="font-mono text-[9px] uppercase tracking-[0.1em] text-white/55">
+            Name this operation zone
+          </span>
+          <input
+            autoFocus
+            value={createName}
+            onChange={(e) => setCreateName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') confirmCreate();
+              if (e.key === 'Escape') cancelCreate();
+            }}
+            placeholder="Zone name"
+            className="w-full rounded border border-white/25 bg-black/90 px-2 py-1 text-xs text-white outline-none focus:border-white/60"
+          />
+          <span className="font-mono text-[9px] uppercase tracking-[0.06em] text-white/40">
+            Uses the current map view for size & location
+          </span>
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={confirmCreate}
+              disabled={!createName.trim()}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded border border-emerald-400/40 bg-emerald-500/15 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-emerald-200 hover:bg-emerald-500/25 disabled:opacity-40"
+            >
+              <Check className="h-3 w-3" /> Save
+            </button>
+            <button
+              type="button"
+              onClick={cancelCreate}
+              className="flex items-center justify-center rounded border border-white/20 px-2 py-1 text-white/60 hover:bg-white/10"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={startCreate}
+          className="flex items-center gap-1.5 rounded-xl border border-white/20 bg-black/95 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-white shadow-[0_8px_24px_rgba(0,0,0,0.45)] hover:bg-black"
+          title="Save the current viewport as an operation zone and prefetch all sources"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Save zone
+        </button>
+      )}
 
       {zones.length > 0 && (
         <div className="w-72 rounded-xl border border-white/15 bg-black/95 shadow-[0_10px_28px_rgba(0,0,0,0.45)] overflow-hidden">
