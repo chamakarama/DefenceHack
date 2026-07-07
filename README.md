@@ -1,5 +1,13 @@
 # L1NX — Junction × Aalto Defence Hackathon
 
+> **Fork notice.** This is a personal fork of the original [L1NX by itsmixu](https://github.com/itsmixu/DefenceHack),
+> which won the Junction × Aalto Defence Hackathon. **I was not a member of that
+> hackathon-winning team** — I forked the project afterwards to keep developing it.
+> All credit for the original build and the hackathon win belongs to the original
+> authors. The first-person "we built / we won" wording in the *Hackathon submission*
+> section below is the original team's text, preserved as-is for historical accuracy;
+> it does not describe my involvement.
+
 ## **61N Challenge**: automate intelligence preparation of the battlespace (IPB) using open-source data.
 
 **L1NX** turns any area of interest into a full operational picture — in seconds. Drop a location, get live terrain analysis, weather intelligence, infrastructure mapping, satellite windows, population data, and automated threat indexing, all fused onto a single interactive map. Built for speed, designed for the field.
