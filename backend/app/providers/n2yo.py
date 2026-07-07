@@ -170,7 +170,7 @@ class N2YOProvider(Provider):
         bucket = now.strftime("%Y%m%d%H") + str(now.minute // 5)
         cache_key = {"bbox": bbox.as_list(), "radius": radius, "bucket": bucket}
 
-        cached = cache.read(self.id, cache_key, CACHE_TTL_SECONDS)
+        cached = await cache.read_async(self.id, cache_key, CACHE_TTL_SECONDS)
         if cached is not None:
             self.mark("ok", "served from cache")
             return FeatureCollection(
@@ -218,7 +218,7 @@ class N2YOProvider(Provider):
                 t=t,
             )
 
-        cache.write(self.id, cache_key, {"features": features})
+        await cache.write_async(self.id, cache_key, {"features": features})
         status = "ok" if features and not errors else "partial"
         if features:
             reason = f"{sat_count} satellites within {radius}°"

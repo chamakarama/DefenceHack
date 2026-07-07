@@ -22,6 +22,7 @@ Eviction strategy:
 """
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import time
@@ -121,3 +122,26 @@ def write(source: str, parts: dict[str, Any], payload: dict[str, Any]) -> None:
     except OSError:
         return  # cache is best-effort
     _evict_to_budget(source, _budget_bytes(source))
+
+
+# ── Async wrappers ───────────────────────────────────────────────────────────
+# `read`/`write` do blocking disk I/O plus a large JSON encode/decode. Called
+# directly from a provider's `async def fetch`, they stall the event loop — so
+# one request reading a 100 MB MML cache file freezes every other in-flight
+# request until the read finishes. Offloading to a worker thread lets the loop
+# keep serving others during the disk syscall (which releases the GIL).
+#
+# The sync versions remain for any non-async caller; async providers should
+# prefer these.
+
+
+async def read_async(
+    source: str, parts: dict[str, Any], ttl_seconds: int
+) -> dict[str, Any] | None:
+    return await asyncio.to_thread(read, source, parts, ttl_seconds)
+
+
+async def write_async(
+    source: str, parts: dict[str, Any], payload: dict[str, Any]
+) -> None:
+    await asyncio.to_thread(write, source, parts, payload)

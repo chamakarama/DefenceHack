@@ -6,12 +6,30 @@ GeoJSON ever crosses the wire.
 """
 from __future__ import annotations
 
+import asyncio
 from functools import lru_cache
-from typing import Any
+from typing import Any, Callable, TypeVar
 
 from pyproj import Transformer
 
 WGS84 = "EPSG:4326"
+
+# Above this many features, the per-coordinate reprojection loop is heavy
+# enough to noticeably stall the event loop, so we run it in a worker thread.
+# pyproj releases the GIL during the PROJ C transform, letting other in-flight
+# requests proceed while a large layer reprojects. Below the threshold the
+# thread hand-off costs more than it saves, so we run inline.
+REPROJECT_THREAD_THRESHOLD = 500
+
+_T = TypeVar("_T")
+
+
+async def offload_if_large(count: int, fn: Callable[[], _T]) -> _T:
+    """Run CPU-bound `fn()` in a worker thread when `count` exceeds the
+    reprojection threshold; otherwise run it inline."""
+    if count > REPROJECT_THREAD_THRESHOLD:
+        return await asyncio.to_thread(fn)
+    return fn()
 
 
 @lru_cache(maxsize=16)

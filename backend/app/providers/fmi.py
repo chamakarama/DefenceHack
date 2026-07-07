@@ -204,7 +204,7 @@ class FMIProvider(Provider):
             "params": list(DEFAULT_PARAMETERS),
         }
 
-        cached = cache.read(self.id, cache_key, CACHE_TTL_SECONDS)
+        cached = await cache.read_async(self.id, cache_key, CACHE_TTL_SECONDS)
         if cached is not None:
             self.mark("ok", "served from cache")
             return FeatureCollection(
@@ -248,7 +248,7 @@ class FMIProvider(Provider):
                 bbox=bbox.as_list(), t=t,
             )
 
-        cache.write(self.id, cache_key, {"features": features})
+        await cache.write_async(self.id, cache_key, {"features": features})
         status = "ok" if features else "partial"
         reason = f"{len(features)} stations" if features else "no observations in window"
         self.mark(status, reason)

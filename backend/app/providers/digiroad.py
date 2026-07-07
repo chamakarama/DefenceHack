@@ -17,7 +17,7 @@ import httpx
 
 from .. import cache
 from ..bbox import BBox
-from ..geo import reproject_bbox, reproject_geometry
+from ..geo import offload_if_large, reproject_bbox, reproject_geometry
 from ..http_client import get_client
 from ..schemas import FeatureCollection, LayerMeta, empty_collection
 from .base import Provider
@@ -72,6 +72,23 @@ def _trim_properties(props: dict) -> dict:
     return out
 
 
+def _build_features(raw_features: list[dict]) -> list[dict]:
+    """Reproject + trim every road link. CPU-bound (per-coordinate transform);
+    callers offload this to a worker thread for large responses."""
+    features: list[dict] = []
+    for raw in raw_features:
+        geom = raw.get("geometry")
+        if geom is None:
+            continue
+        features.append({
+            "type": "Feature",
+            "id": raw.get("id"),
+            "geometry": reproject_geometry(geom, SRC_CRS),
+            "properties": _trim_properties(raw.get("properties") or {}),
+        })
+    return features
+
+
 class DigiroadProvider(Provider):
     def __init__(self) -> None:
         super().__init__(id="digiroad", label="Digiroad — Väylä road network")
@@ -86,7 +103,7 @@ class DigiroadProvider(Provider):
         )
 
         cache_key = {"bbox": bbox.as_list(), "layer": self.layer, "url": self.wfs_url}
-        cached = cache.read(self.id, cache_key, CACHE_TTL_SECONDS)
+        cached = await cache.read_async(self.id, cache_key, CACHE_TTL_SECONDS)
         if cached is not None:
             self.mark("ok", "served from cache")
             return FeatureCollection(
@@ -127,20 +144,13 @@ class DigiroadProvider(Provider):
                 bbox=bbox.as_list(), t=t,
             )
 
-        features: list[dict] = []
-        for raw in payload.get("features", []):
-            geom = raw.get("geometry")
-            if geom is None:
-                continue
-            features.append({
-                "type": "Feature",
-                "id": raw.get("id"),
-                "geometry": reproject_geometry(geom, SRC_CRS),
-                "properties": _trim_properties(raw.get("properties") or {}),
-            })
+        raw_features = payload.get("features", [])
+        features = await offload_if_large(
+            len(raw_features), lambda: _build_features(raw_features)
+        )
 
         truncated = len(features) >= MAX_FEATURES
-        cache.write(self.id, cache_key, {"features": features})
+        await cache.write_async(self.id, cache_key, {"features": features})
         status = "ok" if features else "partial"
         if truncated:
             reason = f"{len(features)} links (capped at {MAX_FEATURES}; zoom in for full detail)"

@@ -113,7 +113,7 @@ class SYKEProvider(Provider):
                 for url, type_name, category, _ in LAYERS
             ],
         }
-        cached = cache.read(self.id, cache_key, CACHE_TTL_SECONDS)
+        cached = await cache.read_async(self.id, cache_key, CACHE_TTL_SECONDS)
         if cached is not None:
             self.mark("ok", "served from cache")
             return FeatureCollection(
@@ -152,7 +152,7 @@ class SYKEProvider(Provider):
                 bbox=bbox.as_list(), t=t,
             )
 
-        cache.write(self.id, cache_key, {"features": all_features})
+        await cache.write_async(self.id, cache_key, {"features": all_features})
         by_cat = {c: sum(1 for f in all_features if f["properties"]["category"] == c)
                   for _, _, c, _ in LAYERS}
         status = "ok" if all_features else "partial"

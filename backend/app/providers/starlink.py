@@ -84,7 +84,7 @@ def _footprint_polygon(lon: float, lat: float, radius_km: float) -> dict[str, An
 async def _fetch_tle_text() -> str:
     """Fetch raw TLE text from Celestrak, with cache."""
     tle_cache_key = {"source": "celestrak-starlink"}
-    cached = cache.read("starlink_tle", tle_cache_key, TLE_CACHE_TTL)
+    cached = await cache.read_async("starlink_tle", tle_cache_key, TLE_CACHE_TTL)
     if cached is not None and "tle_text" in cached:
         return cached["tle_text"]
 
@@ -96,7 +96,7 @@ async def _fetch_tle_text() -> str:
         resp.raise_for_status()
         tle_text = resp.text
 
-    cache.write("starlink_tle", tle_cache_key, {"tle_text": tle_text})
+    await cache.write_async("starlink_tle", tle_cache_key, {"tle_text": tle_text})
     return tle_text
 
 
@@ -254,7 +254,7 @@ class StarlinkProvider(Provider):
             "bbox_round": [round(v, 1) for v in bbox.as_list()],
             "bucket": bucket,
         }
-        cached = cache.read(self.id, pos_cache_key, POS_CACHE_TTL)
+        cached = await cache.read_async(self.id, pos_cache_key, POS_CACHE_TTL)
         if cached is not None:
             self.mark("ok", "served from cache")
             return FeatureCollection(
@@ -301,7 +301,7 @@ class StarlinkProvider(Provider):
         visible = _propagate(tles, now, center_lat, center_lon)
         features = _build_features(visible)
 
-        cache.write(self.id, pos_cache_key, {"features": features})
+        await cache.write_async(self.id, pos_cache_key, {"features": features})
 
         sat_count = len(visible)
         status = "ok" if sat_count > 0 else "partial"

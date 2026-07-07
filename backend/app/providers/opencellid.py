@@ -180,7 +180,7 @@ class OpenCelliDProvider(Provider):
             )
 
         cache_key = {"bbox": bbox.as_list()}
-        cached = cache.read(self.id, cache_key, CACHE_TTL_SECONDS)
+        cached = await cache.read_async(self.id, cache_key, CACHE_TTL_SECONDS)
         if cached is not None:
             cached_features = cached.get("features", [])
             cached_status = cached.get("status")
@@ -269,7 +269,7 @@ class OpenCelliDProvider(Provider):
             status = "partial"
             reason = "no towers in bbox"
 
-        cache.write(
+        await cache.write_async(
             self.id,
             cache_key,
             {"features": features, "status": status, "reason": reason},

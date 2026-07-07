@@ -240,7 +240,7 @@ class FMIForecastProvider(Provider):
             "start_h":    start.strftime("%Y-%m-%dT%H:00Z"),
             "grid":       grid_size,
         }
-        cached = cache.read(self.id, cache_key, CACHE_TTL_SECONDS)
+        cached = await cache.read_async(self.id, cache_key, CACHE_TTL_SECONDS)
         if cached is not None:
             self.mark("ok", "served from cache")
             return FeatureCollection(
@@ -287,7 +287,7 @@ class FMIForecastProvider(Provider):
                 bbox=bbox.as_list(), t=t,
             )
 
-        cache.write(self.id, cache_key, {"features": features})
+        await cache.write_async(self.id, cache_key, {"features": features})
 
         status = "ok" if partial_failures == 0 else "partial"
         reason = (

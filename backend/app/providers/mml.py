@@ -134,7 +134,7 @@ class MMLProvider(Provider):
             )
 
         cache_key = {"bbox": bbox.as_list(), "types": DEFAULT_TERRAIN_TYPES}
-        cached = cache.read(self.id, cache_key, CACHE_TTL_SECONDS)
+        cached = await cache.read_async(self.id, cache_key, CACHE_TTL_SECONDS)
         if cached is not None:
             self.mark("ok", "served from cache")
             return FeatureCollection(
@@ -153,7 +153,7 @@ class MMLProvider(Provider):
         results = await asyncio.gather(*tasks)
 
         features = [f for group in results for f in group]
-        cache.write(self.id, cache_key, {"features": features})
+        await cache.write_async(self.id, cache_key, {"features": features})
 
         status = "ok" if features else "partial"
         reason = (

@@ -164,7 +164,7 @@ class OSMProvider(Provider):
         cache_key = {"bbox": bbox.as_list(), "categories": [c for c, _ in CATEGORIES],
                      "date": date_key}
 
-        cached = cache.read(self.id, cache_key, ttl)
+        cached = await cache.read_async(self.id, cache_key, ttl)
         if cached is not None:
             self.mark("ok", "served from cache")
             return FeatureCollection(
@@ -199,7 +199,7 @@ class OSMProvider(Provider):
             cat = f["properties"]["category"]
             by_cat[cat] = by_cat.get(cat, 0) + 1
 
-        cache.write(self.id, cache_key, {"features": features})
+        await cache.write_async(self.id, cache_key, {"features": features})
         status = "ok" if features else "partial"
         reason = (
             ", ".join(f"{v} {k}" for k, v in sorted(by_cat.items()))

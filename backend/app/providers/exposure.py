@@ -198,7 +198,7 @@ class ExposureProvider(Provider):
 
     async def fetch(self, bbox: BBox, t: datetime | None) -> FeatureCollection:
         cache_key = {"bbox": bbox.as_list()}
-        cached = cache.read(self.id, cache_key, CACHE_TTL_SECONDS)
+        cached = await cache.read_async(self.id, cache_key, CACHE_TTL_SECONDS)
         if cached is not None:
             self.mark("ok", "served from cache")
             return FeatureCollection(
@@ -223,7 +223,7 @@ class ExposureProvider(Provider):
         results = await asyncio.gather(*tasks)
 
         features = [f for group in results for f in group]
-        cache.write(self.id, cache_key, {"features": features})
+        await cache.write_async(self.id, cache_key, {"features": features})
 
         mml_note = "" if api_key else " (MML skipped — no API key)"
         status = "ok" if features else "partial"

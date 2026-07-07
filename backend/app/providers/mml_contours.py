@@ -74,7 +74,7 @@ class MMLContoursProvider(Provider):
             )
 
         cache_key = {"bbox": bbox.as_list(), "layer": DEFAULT_LAYER}
-        cached = cache.read(self.id, cache_key, CACHE_TTL_SECONDS)
+        cached = await cache.read_async(self.id, cache_key, CACHE_TTL_SECONDS)
         if cached is not None:
             self.mark("ok", "served from cache")
             return FeatureCollection(
@@ -141,7 +141,7 @@ class MMLContoursProvider(Provider):
                                     reason=f"MML contours non-JSON: {e}",
                                     bbox=bbox.as_list(), t=t)
 
-        cache.write(self.id, cache_key, {"features": features})
+        await cache.write_async(self.id, cache_key, {"features": features})
         if not features:
             status, reason = "partial", "no contours in bbox"
         elif capped:

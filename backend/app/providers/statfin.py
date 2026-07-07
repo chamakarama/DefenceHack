@@ -17,7 +17,7 @@ import httpx
 
 from .. import cache
 from ..bbox import BBox
-from ..geo import reproject_bbox, reproject_geometry
+from ..geo import offload_if_large, reproject_bbox, reproject_geometry
 from ..http_client import get_client
 from ..schemas import FeatureCollection, LayerMeta, empty_collection
 from .base import Provider
@@ -57,6 +57,22 @@ def _trim_properties(props: dict) -> dict:
     return out
 
 
+def _build_features(raw_features: list[dict]) -> list[dict]:
+    """Reproject + trim every postal area. CPU-bound; offloaded for large sets."""
+    features: list[dict] = []
+    for raw in raw_features:
+        geom = raw.get("geometry")
+        if geom is None:
+            continue
+        features.append({
+            "type": "Feature",
+            "id": raw.get("id"),
+            "geometry": reproject_geometry(geom, SRC_CRS),
+            "properties": _trim_properties(raw.get("properties") or {}),
+        })
+    return features
+
+
 class StatFinProvider(Provider):
     def __init__(self) -> None:
         super().__init__(id="statfin", label="Statistics Finland — Paavo demographics")
@@ -71,7 +87,7 @@ class StatFinProvider(Provider):
         )
 
         cache_key = {"bbox": bbox.as_list(), "layer": self.layer}
-        cached = cache.read(self.id, cache_key, CACHE_TTL_SECONDS)
+        cached = await cache.read_async(self.id, cache_key, CACHE_TTL_SECONDS)
         if cached is not None:
             self.mark("ok", "served from cache")
             return FeatureCollection(
@@ -111,19 +127,12 @@ class StatFinProvider(Provider):
                 bbox=bbox.as_list(), t=t,
             )
 
-        features: list[dict] = []
-        for raw in payload.get("features", []):
-            geom = raw.get("geometry")
-            if geom is None:
-                continue
-            features.append({
-                "type": "Feature",
-                "id": raw.get("id"),
-                "geometry": reproject_geometry(geom, SRC_CRS),
-                "properties": _trim_properties(raw.get("properties") or {}),
-            })
+        raw_features = payload.get("features", [])
+        features = await offload_if_large(
+            len(raw_features), lambda: _build_features(raw_features)
+        )
 
-        cache.write(self.id, cache_key, {"features": features})
+        await cache.write_async(self.id, cache_key, {"features": features})
         status = "ok" if features else "partial"
         reason = f"{len(features)} postal areas" if features else "no postal areas in bbox"
         self.mark(status, reason)
