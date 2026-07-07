@@ -4,6 +4,7 @@ import LayerToggles from './LayerToggles';
 import DrawnList from './DrawnList';
 import BriefingPanel from './briefing/BriefingPanel';
 import PlansPanel from './PlansPanel';
+import { useDrawnStore } from '../store';
 
 // File management lives in the floating top-left overlay
 // (frontend/src/dashboard/FileManagerOverlay.tsx) since multi-tab + command
@@ -21,6 +22,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 
 export default function SidePanel() {
   const [tab, setTab] = useState<Tab>('layers');
+  const drawnCount = useDrawnStore((s) => s.features.length);
 
   return (
     <div className="flex h-full flex-col border-l text-white" style={{ background: '#131313', borderColor: '#393939' }}>
@@ -32,6 +34,7 @@ export default function SidePanel() {
             onClick={() => setTab(t.id)}
             icon={t.icon}
             label={t.label}
+            badge={t.id === 'drawn' && drawnCount > 0 ? drawnCount : undefined}
           />
         ))}
       </nav>
@@ -51,13 +54,14 @@ interface TabProps {
   onClick: () => void;
   icon: React.ReactNode;
   label: string;
+  badge?: number;
 }
 
-function TabBtn({ active, onClick, icon, label }: TabProps) {
+function TabBtn({ active, onClick, icon, label, badge }: TabProps) {
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center justify-center gap-0.5 px-1 py-2 font-mono transition"
+      className="relative flex flex-col items-center justify-center gap-0.5 px-1 py-2 font-mono transition"
       style={{
         background: active ? '#ffffff' : 'transparent',
         color: active ? '#131313' : 'rgba(255,255,255,0.50)',
@@ -65,7 +69,20 @@ function TabBtn({ active, onClick, icon, label }: TabProps) {
       }}
     >
       {icon}
-      <span>{label}</span>
+      <span className="flex items-center gap-1">
+        {label}
+        {badge != null && (
+          <span
+            className="rounded-full px-1 text-[8px] font-bold leading-[1.4]"
+            style={{
+              background: active ? '#131313' : 'rgba(255,255,255,0.18)',
+              color: active ? '#ffffff' : 'rgba(255,255,255,0.85)',
+            }}
+          >
+            {badge}
+          </span>
+        )}
+      </span>
     </button>
   );
 }

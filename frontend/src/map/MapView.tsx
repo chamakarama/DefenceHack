@@ -4,6 +4,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import BboxTracker from './BboxTracker';
 import SourceLayer from './SourceLayer';
+import MapCoordinateReadout from './MapCoordinateReadout';
+import LocationSearch from './LocationSearch';
 import DrawControl from '../drawing/DrawControl';
 import ArrowControl from '../drawing/ArrowControl';
 import RulerControl from '../drawing/RulerControl';
@@ -94,7 +96,9 @@ export default function MapView() {
   const timelineStartInput = useMemo(() => toDatetimeLocalValue(visibleStartMs), [visibleStartMs]);
   const selectedLabel = useMemo(() => {
     const d = new Date(selectedMs);
-    return d.toLocaleString([], { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    // 24-hour clock — military convention; avoids the AM/PM mismatch with the
+    // 24h Start input on the other end of the timeline.
+    return d.toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
   }, [selectedMs]);
   // Evenly-spaced tick marks along the slider track for visual scale.
   const tickTimes = useMemo(() => {
@@ -250,9 +254,11 @@ export default function MapView() {
         <RulerControl />
         <SymbolControl />
         <OverlayLayer />
+        <MapCoordinateReadout />
         {ALL_LAYERS.map((id) => (active[id] ? <SourceLayer key={id} layer={id} /> : null))}
       </MapContainer>
 
+      <LocationSearch />
       <ZoneControls />
 
       {/* ── Bottom drawing toolbar ── */}
@@ -442,9 +448,9 @@ function formatTick(ms: number, nowMs: number): string {
   if (deltaH <= 0) return 'now';
   const d = new Date(ms);
   if (deltaH < 24) {
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
   }
-  return d.toLocaleString([], { month: 'short', day: '2-digit', hour: '2-digit' });
+  return d.toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', hour12: false });
 }
 
 function toDatetimeLocalValue(ms: number): string {

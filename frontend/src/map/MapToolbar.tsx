@@ -529,7 +529,7 @@ export default function MapToolbar() {
 
   return (
     <div
-      className="pointer-events-auto absolute bottom-[88px] right-6 z-[1000] flex flex-col items-end gap-2"
+      className="pointer-events-auto absolute bottom-[112px] right-6 z-[1000] flex flex-col items-end gap-2"
     >
       {/* Delete mode banner — shown above everything */}
       {isDeleteMode && (
